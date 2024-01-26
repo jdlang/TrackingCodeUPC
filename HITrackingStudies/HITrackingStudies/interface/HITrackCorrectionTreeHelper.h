@@ -1,5 +1,5 @@
-//#ifndef HIRun2015Ana_HITrackCorrectionTreeHelper
-//#define HIRun2015Ana_HITrackCorrectionTreeHelper
+#ifndef HIRun2015Ana_HITrackCorrectionTreeHelper
+#define HIRun2015Ana_HITrackCorrectionTreeHelper
 
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
@@ -73,7 +73,7 @@ typedef struct
   // note that this must be last due to padding incompatibilties
   Bool_t highPurityr;
 
-} UPCTrackBranches_t;
+} HITrackBranches_t;
 
 typedef struct
 {
@@ -93,15 +93,15 @@ typedef struct
   Int_t adcX[maxhits][maxadc];
   Int_t adcY[maxhits][maxadc];
   
-} UPCHitBranches_t;
+} HIHitBranches_t;
 
 // Helper class for producing track correction ntuples
 
-class UPCTrackCorrectionTreeHelper
+class HITrackCorrectionTreeHelper 
 {
   public:
 
-    UPCTrackCorrectionTreeHelper();
+    HITrackCorrectionTreeHelper();
 
     void Set(const TrackingParticle &, const reco::Track &, const reco::Vertex &, int, int, bool setRecHits = false );
 
@@ -109,8 +109,8 @@ class UPCTrackCorrectionTreeHelper
     void Set(const reco::Track &, const reco::Vertex &, int, bool setRecHits = false);
     void Set(const TrackingParticle &, int);
 
-    UPCTrackBranches_t b;
-    UPCHitBranches_t bhit;
+    HITrackBranches_t b;
+    HIHitBranches_t bhit;
     TString hiTrackLeafString;
     void SetRecHitTree(TTree *);  
 

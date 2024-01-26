@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    UPCTrackingStudies
-// Class:      UPCTrackingStudies
+// Package:    HITrackingStudies/HITrackingStudies
+// Class:      HITrackingStudies
 //
-/**\class UPCTrackingStudies UPCTrackingStudies.cc UPCTrackingStudies/plugins/UPCTrackingStudies.cc
+/**\class HITrackingStudies HITrackingStudies.cc HITrackingStudies/HITrackingStudies/plugins/HITrackingStudies.cc
 
  Description: [one line class summary]
 
@@ -14,7 +14,6 @@
 // Original Author:  Austin Alan Baty
 //         Created:  Thu, 28 Jun 2018 18:04:11 GMT
 //
-// Modifications for UPC:  Jordan D. Lang (January 2024)
 //
 
 
@@ -29,9 +28,9 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/Utilities/interface/InputTag.h"
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
+ #include "FWCore/Utilities/interface/InputTag.h"
+ #include "DataFormats/TrackReco/interface/Track.h"
+ #include "DataFormats/TrackReco/interface/TrackFwd.h"
 //
 // class declaration
 //
@@ -44,10 +43,10 @@
 
 using reco::TrackCollection;
 
-class UPCTrackingStudies : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class HITrackingStudies : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
    public:
-      explicit UPCTrackingStudies(const edm::ParameterSet&);
-      ~UPCTrackingStudies();
+      explicit HITrackingStudies(const edm::ParameterSet&);
+      ~HITrackingStudies();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -72,19 +71,22 @@ class UPCTrackingStudies : public edm::one::EDAnalyzer<edm::one::SharedResources
 //
 // constructors and destructor
 //
-UPCTrackingStudies::UPCTrackingStudies(const edm::ParameterSet& iConfig)
+HITrackingStudies::HITrackingStudies(const edm::ParameterSet& iConfig)
  :
   tracksToken_(consumes<TrackCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tracks")))
 
 {
    //now do what ever initialization is needed
+
 }
 
 
-UPCTrackingStudies::~UPCTrackingStudies()
+HITrackingStudies::~HITrackingStudies()
 {
+
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
+
 }
 
 
@@ -94,7 +96,7 @@ UPCTrackingStudies::~UPCTrackingStudies()
 
 // ------------ method called for each event  ------------
 void
-UPCTrackingStudies::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+HITrackingStudies::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
@@ -121,19 +123,19 @@ UPCTrackingStudies::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 // ------------ method called once each job just before starting event loop  ------------
 void
-UPCTrackingStudies::beginJob()
+HITrackingStudies::beginJob()
 {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
 void
-UPCTrackingStudies::endJob()
+HITrackingStudies::endJob()
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-UPCTrackingStudies::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+HITrackingStudies::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -148,4 +150,4 @@ UPCTrackingStudies::fillDescriptions(edm::ConfigurationDescriptions& description
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(UPCTrackingStudies);
+DEFINE_FWK_MODULE(HITrackingStudies);

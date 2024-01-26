@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 
-UPCTrackCorrections = cms.EDAnalyzer('UPCTrackCorrectionAnalyzer',
+HITrackCorrections = cms.EDAnalyzer('HITrackCorrectionAnalyzer',
     trackSrc = cms.InputTag("generalTracks"),
     vertexSrc = cms.InputTag("offlinePrimaryVertices"),
     pfCandSrc = cms.InputTag("particleFlowTmp"),
