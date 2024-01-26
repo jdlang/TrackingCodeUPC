@@ -1,14 +1,14 @@
 ***To setup the code, please, follow:***
 
-ssh -XY caber@lxplus8.cern.ch
+ssh -XY username@lxplus8.cern.ch
 
 export SCRAM_ARCH=el8_amd64_gcc11
 
-voms-proxy-init -voms cms
+voms-proxy-init -voms cms -valid 192:00
 
-cmsrel CMSSW_13_2_4
+cmsrel CMSSW_13_2_10
 
-cd CMSSW_13_2_4/src
+cd CMSSW_13_2_10/src
 
 cmsenv
 
@@ -18,15 +18,15 @@ scram b -j 8
 
 To prepare the trees and histograms for performance plots, please, use:
 
-HITrackingStudies/HITrackingStudies/test/run_PbPb_cfg.py
+HITrackCorrections/HITrackCorrections/test/run_UPC_cfg.py
 
 For control plots, see macros:
 
-HITrackingStudies/HITrackingStudies/test/plottingMacro/macro_control_plots_XXX.C
+HITrackCorrections/HITrackCorrections/test/plottingMacro/macro_control_plots_XXX.C
 
 For efficiency and fake rate use:
 
-HITrackingStudies/HITrackingStudies/test/plottingMacro/plotHistXXX.C
+HITrackCorrections/HITrackCorrections/test/plottingMacro/plotHistXXX.C
 
 
 ***Very Important*** The configurations below (for full reco) are not suitable for 13_2_X MC. They can serve as examples, but are not the latest settings

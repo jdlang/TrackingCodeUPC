@@ -22,7 +22,7 @@ process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
-process.load('UPCTrackingStudies.UPCTrackCorrectionAnalyzer_cfi')
+process.load('HITrackingStudies.HITrackingStudies.HITrackCorrectionAnalyzer_cfi')
 
 # Parse arguments
 import FWCore.ParameterSet.VarParsing as VarParsing
@@ -70,33 +70,33 @@ process.source = cms.Source(
 ### TRACK CUTS ###
 
 # Input collections
-process.UPCTrackCorrections.centralitySrc = cms.InputTag("")
-process.UPCTrackCorrections.trackSrc      = cms.InputTag("generalTracks")
-process.UPCTrackCorrections.vertexSrc     = cms.InputTag("offlinePrimaryVertices")
-process.UPCTrackCorrections.qualityString = cms.string("highPurity")
-process.UPCTrackCorrections.pfCandSrc     = cms.InputTag("particleFlow")
-process.UPCTrackCorrections.jetSrc        = cms.InputTag("ak4CaloJets")
-process.UPCTrackCorrections.associatorMap = cms.InputTag("trackingParticleRecoTrackAsssociation")
+process.HITrackCorrections.centralitySrc = cms.InputTag("")
+process.HITrackCorrections.trackSrc      = cms.InputTag("generalTracks")
+process.HITrackCorrections.vertexSrc     = cms.InputTag("offlinePrimaryVertices")
+process.HITrackCorrections.qualityString = cms.string("highPurity")
+process.HITrackCorrections.pfCandSrc     = cms.InputTag("particleFlow")
+process.HITrackCorrections.jetSrc        = cms.InputTag("ak4CaloJets")
+process.HITrackCorrections.associatorMap = cms.InputTag("trackingParticleRecoTrackAsssociation")
 
 # Cut options
-process.UPCTrackCorrections.useCentrality    = False
-process.UPCTrackCorrections.applyTrackCuts   = False
-process.UPCTrackCorrections.fillNTuples      = False
-process.UPCTrackCorrections.applyVertexZCut  = False
-process.UPCTrackCorrections.doVtxReweighting = False
-process.UPCTrackCorrections.doCaloMatched    = False
+process.HITrackCorrections.useCentrality    = False
+process.HITrackCorrections.applyTrackCuts   = False
+process.HITrackCorrections.fillNTuples      = False
+process.HITrackCorrections.applyVertexZCut  = False
+process.HITrackCorrections.doVtxReweighting = False
+process.HITrackCorrections.doCaloMatched    = False
 
 # Cut values
-process.UPCTrackCorrections.dxyErrMax = 3.0
-process.UPCTrackCorrections.dzErrMax  = 3.0
-process.UPCTrackCorrections.ptErrMax  = 0.1
-process.UPCTrackCorrections.nhitsMin  = 11
-process.UPCTrackCorrections.chi2nMax  = 0.18
-process.UPCTrackCorrections.reso      = 0.5
-#process.UPCTrackCorrections.crossSection = 1.0 #1.0 is no reweigh
+process.HITrackCorrections.dxyErrMax = 3.0
+process.HITrackCorrections.dzErrMax  = 3.0
+process.HITrackCorrections.ptErrMax  = 0.1
+process.HITrackCorrections.nhitsMin  = 11
+process.HITrackCorrections.chi2nMax  = 0.18
+process.HITrackCorrections.reso      = 0.5
+#process.HITrackCorrections.crossSection = 1.0 #1.0 is no reweigh
 
 #algo
-process.UPCTrackCorrections.algoParameters = cms.vint32(
+process.HITrackCorrections.algoParameters = cms.vint32(
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
     10,11,12,13,14,15,16,17,18,19,
     20,21,22,23,24,25,26,27,28,29,
@@ -104,7 +104,7 @@ process.UPCTrackCorrections.algoParameters = cms.vint32(
     40,41,42,43,44,45,46
 )
 # vertex reweight parameters
-process.UPCTrackCorrections.vtxWeightParameters = cms.vdouble(
+process.HITrackCorrections.vtxWeightParameters = cms.vdouble(
     0.0306789, # WHAT DO THESE MEAN????
     0.427748,
     5.16555,
@@ -122,8 +122,8 @@ process.GlobalTag = GlobalTag(
 ###
 
 # Forest style analyzers (anaTrack module)
-# (not affected by UPCTrackCorrections code)
-process.load('UPCTrackingStudies.AnalyzerCode.trackAnalyzer_cff')
+# (not affected by HITrackCorrections code)
+process.load('HITrackCorrections.AnalyzerCode.trackAnalyzer_cff')
 process.anaTrack.associatorMap     = cms.InputTag("trackingParticleRecoTrackAsssociation")
 process.anaTrack.useCentrality     = False
 process.anaTrack.trackSrc          = 'generalTracks'
@@ -152,6 +152,6 @@ process.simRecoTrackAssocSeq = cms.Sequence(
 
 process.p = cms.Path(
     process.simRecoTrackAssocSeq *
-    process.UPCTrackCorrections *
+    process.HITrackCorrections *
     process.anaTrack
 )
