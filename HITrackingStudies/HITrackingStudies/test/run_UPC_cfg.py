@@ -33,18 +33,18 @@ options.register (
     VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
     VarParsing.VarParsing.varType.int,              # string, int, bool or float
     "n")
-options.register (
-    'i',
-    'tempInput/trk_GeneralTrack.root', # default value
-    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
-    VarParsing.VarParsing.varType.string,           # string, int, bool or float
-    "i")
-options.register (
-    'o',
-    'tempOutput/trk_GeneralTrack.root', # default value
-    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
-    VarParsing.VarParsing.varType.string,           # string, int, bool or float
-    "o")
+#options.register (
+#    'i',
+#    'tempInput/trk_GeneralTrack.root', # default value
+#    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
+#    VarParsing.VarParsing.varType.string,           # string, int, bool or float
+#    "i")
+#options.register (
+#    'o',
+#    'tempOutput/trk_GeneralTrack.root', # default value
+#    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
+#    VarParsing.VarParsing.varType.string,           # string, int, bool or float
+#    "o")
 options.parseArguments()
 
 # Process arguments
@@ -56,13 +56,14 @@ process.options = cms.untracked.PSet(
 )
 process.TFileService = cms.Service(
     "TFileService",
-    fileName = cms.string(options.o) # SET OUTPUT FILE?????
+    fileName = cms.string('tempOutput/trk_UPCTrack.root') # SET OUTPUT FILE?????
 )
 # Set input source
 process.source = cms.Source(
     "PoolSource",
     duplicateCheckMode  = cms.untracked.string("noDuplicateCheck"),
-    fileNames           = cms.untracked.vstring('file:' + options.i),
+#    fileNames           = cms.untracked.vstring('file:' + options.i),
+    fileNames           = cms.untracked.vstring('file:/afs/cern.ch/user/j/jdlang/UPC_test/STARLIGHT_single_diff_RECO_1.root'),
     skipEvents          = cms.untracked.uint32(0),
     secondaryFileNames  = cms.untracked.vstring()
 )
