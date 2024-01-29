@@ -36,14 +36,14 @@ options.register (
 options.register (
     'i',
     'tempInput/trk_GeneralTrack.root', # default value
-    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
-    VarParsing.VarParsing.varType.string,           # string, int, bool or float
+    VarParsing.VarParsing.multiplicity.list,   # singleton or list
+    VarParsing.VarParsing.varType.char,           # string, int, bool or float
     "i")
 options.register (
     'o',
     'tempOutput/trk_GeneralTrack.root', # default value
-    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
-    VarParsing.VarParsing.varType.string,           # string, int, bool or float
+    VarParsing.VarParsing.multiplicity.list,   # singleton or list
+    VarParsing.VarParsing.varType.char,           # string, int, bool or float
     "o")
 options.parseArguments()
 
@@ -63,7 +63,7 @@ process.TFileService = cms.Service(
 process.source = cms.Source(
     "PoolSource",
     duplicateCheckMode  = cms.untracked.string("noDuplicateCheck"),
-    fileNames           = cms.untracked.vstring('file:' + options.i),
+    fileNames           = cms.untracked.vstring('file:' * options.i),
 #    fileNames           = cms.untracked.vstring('file:/afs/cern.ch/user/j/jdlang/UPC_test/STARLIGHT_single_diff_RECO_1.root'),
     skipEvents          = cms.untracked.uint32(0),
     secondaryFileNames  = cms.untracked.vstring()
@@ -73,11 +73,11 @@ process.source = cms.Source(
 
 # Input collections
 process.HITrackCorrections.centralitySrc = cms.InputTag("")
-process.HITrackCorrections.trackSrc      = cms.InputTag("generalTracks")
-process.HITrackCorrections.vertexSrc     = cms.InputTag("offlinePrimaryVertices")
+process.HITrackCorrections.trackSrc = cms.InputTag("generalTracks")
+process.HITrackCorrections.vertexSrc = cms.InputTag("offlinePrimaryVertices")
 process.HITrackCorrections.qualityString = cms.string("highPurity")
-process.HITrackCorrections.pfCandSrc     = cms.InputTag("particleFlow")
-process.HITrackCorrections.jetSrc        = cms.InputTag("ak4CaloJets")
+process.HITrackCorrections.pfCandSrc = cms.InputTag("particleFlow")
+process.HITrackCorrections.jetSrc = cms.InputTag("ak4CaloJets")
 process.HITrackCorrections.associatorMap = cms.InputTag("trackingParticleRecoTrackAsssociation")
 
 # Cut options
@@ -99,7 +99,7 @@ process.HITrackCorrections.reso      = 0.5
 
 #algo
 process.HITrackCorrections.algoParameters = cms.vint32(
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    0,1,2,3,4,5,6,7,8,9,
     10,11,12,13,14,15,16,17,18,19,
     20,21,22,23,24,25,26,27,28,29,
     30,31,32,33,34,35,36,37,38,39,
@@ -125,35 +125,28 @@ process.GlobalTag = GlobalTag(
 
 # Forest style analyzers (anaTrack module)
 # (not affected by HITrackCorrections code)
-process.load('HITrackCorrections.AnalyzerCode.trackAnalyzer_cff')
-process.anaTrack.associatorMap     = cms.InputTag("trackingParticleRecoTrackAsssociation")
-process.anaTrack.useCentrality     = False
-process.anaTrack.trackSrc          = 'generalTracks'
-process.anaTrack.mvaSrc            = cms.InputTag("generalTracks","MVAValues")
-process.anaTrack.doMVA             = False
-process.anaTrack.doSimTrack        = True
-process.anaTrack.doSimVertex       = True
-process.anaTrack.fillSimTrack      = True
-process.anaTrack.doPFMatching      = False
+process.load('HITrackingStudies.AnalyzerCode.trackAnalyzer_cff')
+process.anaTrack.associatorMap = cms.InputTag("trackingParticleRecoTrackAsssociation")
+process.anaTrack.useCentrality = False
+process.anaTrack.trackSrc = 'generalTracks'
+process.anaTrack.mvaSrc = cms.InputTag("generalTracks","MVAValues")
+process.anaTrack.doMVA = False
+process.anaTrack.doSimTrack = True
+process.anaTrack.doSimVertex = True
+process.anaTrack.fillSimTrack = True
+process.anaTrack.doPFMatching = False
 process.anaTrack.doHighestPtVertex = False
 process.anaTrack.doTrackVtxWImpPar = False
 
 process.load('SimTracker.TrackAssociation.trackingParticleRecoTrackAsssociation_cfi')
 process.trackingParticleRecoTrackAsssociation.label_tr = cms.InputTag("generalTracks")
-
 process.load('SimTracker.TrackAssociatorProducers.quickTrackAssociatorByHits_cfi')
 process.quickTrackAssociatorByHits.SimToRecoDenominator = cms.string('reco')
-
 process.load('SimTracker.TrackerHitAssociation.tpClusterProducer_cfi')
-
-process.simRecoTrackAssocSeq = cms.Sequence(
-    process.tpClusterProducer *
-    process.quickTrackAssociatorByHits *
-    process.trackingParticleRecoTrackAsssociation
-)
+process.simRecoTrackAssocSeq = cms.Sequence(process.tpClusterProducer * process.quickTrackAssociatorByHits * process.trackingParticleRecoTrackAsssociation)
 
 process.p = cms.Path(
-    process.simRecoTrackAssocSeq *
-    process.HITrackCorrections *
-    process.anaTrack
+                      process.simRecoTrackAssocSeq *
+                      process.HITrackCorrections *
+                      process.anaTrack
 )
