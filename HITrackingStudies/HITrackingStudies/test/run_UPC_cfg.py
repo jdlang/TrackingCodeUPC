@@ -37,24 +37,34 @@ process.load('HITrackingStudies.HITrackingStudies.HITrackCorrectionAnalyzer_cfi'
 # Parse arguments
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
-options.register (
+options.register(
     'n',
-    defNEvent, # default value
+    defNEvent,                          # default value
     VarParsing.multiplicity.singleton,  # singleton or list
     VarParsing.varType.int,             # string, int, bool or float
-    "Max number of events")
-options.register (
+    "Max number of events"
+)
+options.register(
     'i',
     defInput,                           # default value
     VarParsing.multiplicity.list,       # singleton or list
     VarParsing.varType.string,          # string, int, bool or float
-    "Input file path")
-options.register (
+    "Input file path"
+)
+options.register(
     'o',
     defOutput,                          # default value
     VarParsing.multiplicity.list,       # singleton or list
     VarParsing.varType.string,          # string, int, bool or float
-    "Output file path")
+    "Output file path"
+)
+options.register(
+    't',
+    '',                                 # default value
+    VarParsing.multiplicity.singleton,  # singleton or list
+    VarParsing.varType.string,          # string, int, bool or float
+    ".txt file with list of inputs"
+)
 options.parseArguments()
 
 # Process arguments
@@ -70,12 +80,17 @@ process.TFileService = cms.Service(
 )
 
 # Set input source
+inputList = []
+if( options.t ):
+    inputList = open(options.t).readlines()
+else:
+    inputList = options.i
 process.source = cms.Source(
     "PoolSource",
     duplicateCheckMode  = cms.untracked.string("noDuplicateCheck"),
-    fileNames           = cms.untracked.vstring(options.i),
+    fileNames           = cms.untracked.vstring(inputList),
     skipEvents          = cms.untracked.uint32(0),
-    secondaryFileNames  = cms.untracked.vstring()
+    #secondaryFileNames  = cms.untracked.vstring()
 )
 
 ### TRACK CUTS ###

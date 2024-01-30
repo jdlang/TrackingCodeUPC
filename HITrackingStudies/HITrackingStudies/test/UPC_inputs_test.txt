@@ -1,0 +1,3 @@
+file:/eos/user/j/jdlang/UPC_Test/data/STARLIGHT_single_diff_RECO_1.root
+file:/eos/user/j/jdlang/UPC_Test/data/STARLIGHT_single_diff_RECO_2.root
+file:/eos/user/j/jdlang/UPC_Test/data/STARLIGHT_single_diff_RECO_3.root
