@@ -25,26 +25,26 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load('HITrackingStudies.HITrackingStudies.HITrackCorrectionAnalyzer_cfi')
 
 # Parse arguments
-import FWCore.ParameterSet.VarParsing as VarParsing
-options = VarParsing.VarParsing('analysis')
+from FWCore.ParameterSet.VarParsing import VarParsing
+options = VarParsing('analysis')
 options.register (
     'n',
     -1, # default value
-    VarParsing.VarParsing.multiplicity.singleton,   # singleton or list
-    VarParsing.VarParsing.varType.int,              # string, int, bool or float
-    "n")
+    VarParsing.multiplicity.singleton,   # singleton or list
+    VarParsing.varType.int,              # string, int, bool or float
+    "Max number of events")
 options.register (
     'i',
     'tempInput/trk_GeneralTrack.root', # default value
-    VarParsing.VarParsing.multiplicity.list,   # singleton or list
-    VarParsing.VarParsing.varType.char,           # string, int, bool or float
-    "i")
+    VarParsing.multiplicity.list,        # singleton or list
+    VarParsing.varType.string,           # string, int, bool or float
+    "Input file path")
 options.register (
     'o',
     'tempOutput/trk_GeneralTrack.root', # default value
-    VarParsing.VarParsing.multiplicity.list,   # singleton or list
-    VarParsing.VarParsing.varType.char,           # string, int, bool or float
-    "o")
+    VarParsing.multiplicity.list,        # singleton or list
+    VarParsing.varType.string,           # string, int, bool or float
+    "Output file path")
 options.parseArguments()
 
 # Process arguments
@@ -56,14 +56,14 @@ process.options = cms.untracked.PSet(
 )
 process.TFileService = cms.Service(
     "TFileService",
-    fileName = cms.string(options.o)
-#    fileName = cms.string('tempOutput/trk_UPCTrack.root') # SET OUTPUT FILE?????
+#    fileName = cms.vstring(options.o)
+    fileName = cms.string('trk_GeneralTrack.root')
 )
 # Set input source
 process.source = cms.Source(
     "PoolSource",
     duplicateCheckMode  = cms.untracked.string("noDuplicateCheck"),
-    fileNames           = cms.untracked.vstring('file:' * options.i),
+    fileNames           = cms.untracked.vstring(options.i),
 #    fileNames           = cms.untracked.vstring('file:/afs/cern.ch/user/j/jdlang/UPC_test/STARLIGHT_single_diff_RECO_1.root'),
     skipEvents          = cms.untracked.uint32(0),
     secondaryFileNames  = cms.untracked.vstring()
