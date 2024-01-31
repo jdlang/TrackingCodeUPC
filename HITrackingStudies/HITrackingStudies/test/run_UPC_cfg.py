@@ -2,7 +2,8 @@
 '''
 sample(UNUSED)="MC_RecoDebug","MC_Reco_AOD","MC_MiniAOD","Data_Reco_AOD","Data_MiniAOD"
 n=integer number of events
-i=input file path
+i=input file path(s) (if local, must use 'file:/path/file.root')
+t=.txt file of input file path(s) (if local, must use 'file:/path/file.root')
 o=output file path
 
 To run it, please, do e.g.:
