@@ -1,10 +1,10 @@
 ### Options to run
 '''
-sample(UNUSED)="MC_RecoDebug","MC_Reco_AOD","MC_MiniAOD","Data_Reco_AOD","Data_MiniAOD"
 n=integer number of events
 i=input file path(s) (if local, must use 'file:/path/file.root')
 t=.txt file of input file path(s) (if local, must use 'file:/path/file.root')
 o=output file path
+(UNUSED)sample="MC_RecoDebug","MC_Reco_AOD","MC_MiniAOD","Data_Reco_AOD","Data_MiniAOD"
 
 To run it, please, do e.g.:
     cmsRun run_UPC_cfg.py n=1000 i=dir/input_file.root o=dir/output_file.root
@@ -100,12 +100,13 @@ process.source = cms.Source(
 process.HITrackCorrections.centralitySrc    = cms.InputTag("")
 process.HITrackCorrections.trackSrc         = cms.InputTag("generalTracks")
 process.HITrackCorrections.vertexSrc        = cms.InputTag("offlinePrimaryVertices")
-process.HITrackCorrections.qualityString    = cms.string("highPurity")
-process.HITrackCorrections.pfCandSrc        = cms.InputTag("particleFlow")
+process.HITrackCorrections.qualityString    = cms.string("highPurity") # "Balanced" track eff + bkg
+process.HITrackCorrections.pfCandSrc        = cms.InputTag("particleFlow") # Particle Flow candidates
 process.HITrackCorrections.jetSrc           = cms.InputTag("ak4CaloJets")
 process.HITrackCorrections.associatorMap    = cms.InputTag("trackingParticleRecoTrackAsssociation")
 
 # Cut options
+# ??? Why are there no cuts ???
 process.HITrackCorrections.useCentrality    = False
 process.HITrackCorrections.applyTrackCuts   = False
 process.HITrackCorrections.fillNTuples      = False
@@ -123,7 +124,6 @@ process.HITrackCorrections.reso         = 0.5
 process.HITrackCorrections.crossSection = 1.0 #1.0 is no reweigh
 
 # Algo Parameters
-# ??? What does this mean ???
 process.HITrackCorrections.algoParameters = cms.vint32(
     0,1,2,3,4,5,6,7,8,9,
     10,11,12,13,14,15,16,17,18,19,
@@ -132,7 +132,6 @@ process.HITrackCorrections.algoParameters = cms.vint32(
     40,41,42,43,44,45,46
 )
 # Vertex reweight parameters
-# ??? What does this mean ???
 process.HITrackCorrections.vtxWeightParameters = cms.vdouble(
     0.0306789,
     0.427748,
@@ -142,7 +141,6 @@ process.HITrackCorrections.vtxWeightParameters = cms.vdouble(
     7.01258
 )
 
-# ??? WHAT IS THIS ???
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(
     process.GlobalTag,
@@ -156,7 +154,7 @@ process.anaTrack.associatorMap      = cms.InputTag("trackingParticleRecoTrackAss
 process.anaTrack.useCentrality      = False
 process.anaTrack.trackSrc           = 'generalTracks'
 process.anaTrack.mvaSrc             = cms.InputTag("generalTracks","MVAValues")
-process.anaTrack.doMVA              = False
+process.anaTrack.doMVA              = False # Why do we have the above line if no MVA?
 process.anaTrack.doSimTrack         = True
 process.anaTrack.doSimVertex        = True
 process.anaTrack.fillSimTrack       = True
