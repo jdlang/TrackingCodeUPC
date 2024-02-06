@@ -73,30 +73,27 @@ TCanvas* makeMultiCanvas(const char* name,
 
 	double ratio = nRows/nColumns;
 
-	TCanvas* canvas = new TCanvas( name, title, 1, 1, 400*nRows, 400*nColumns );
-	canvas->SetFillColor      (0);
-	canvas->SetBorderMode     (0);
-	canvas->SetBorderSize     (10);
-	// Set margins to reasonable defaults
-	canvas->SetLeftMargin     (0.30);
-	canvas->SetRightMargin    (0.10);
-	canvas->SetTopMargin      (0.10);
-	canvas->SetBottomMargin   (0.30);
+	TCanvas* divCanvas = new TCanvas( name, title, 1, 1, 500*nRows, 500*nColumns );
+	divCanvas->SetFillColor      (0);
+    divCanvas->SetFillStyle      (0);
+	divCanvas->SetBorderMode     (0);
 	// Setup a frame which makes sense
-	canvas->SetFrameFillStyle (0);
-	canvas->SetFrameLineStyle (0);
-	canvas->SetFrameBorderMode(0);
-	canvas->SetFrameBorderSize(10);
-	canvas->SetFrameFillStyle (0);
-	canvas->SetFrameLineStyle (0);
-	canvas->SetFrameBorderMode(0);
-	canvas->SetFrameBorderSize(10);
+	divCanvas->SetFrameFillStyle (0);
+	divCanvas->SetFrameLineStyle (0);
+	divCanvas->SetFrameBorderMode(0);
+  
+ 	divCanvas->Divide(nRows,nColumns,0.0001,0.0001);
+  
+    for( int i = 1 ; i <= (nRows * nColumns) ; i++ ) {
+        divCanvas->cd(i);
+        divCanvas->GetPad(i)->SetTopMargin(.08);    // ↑
+        divCanvas->GetPad(i)->SetLeftMargin(.15);   // ←
+        divCanvas->GetPad(i)->SetRightMargin(.05);  // →
+        divCanvas->GetPad(i)->SetBottomMargin(.12); // ↓
+    }
  	
- 	canvas->Divide(nRows,nColumns,0.01,0.01);
-
- 	gPad->SetLeftMargin(0.3);
- 	gPad->SetBottomMargin(0.3);
-	return canvas;
+     
+	return divCanvas;
 
 }
 

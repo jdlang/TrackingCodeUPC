@@ -1,468 +1,436 @@
 #include "RiceStyle.h"
 #include <vector>
 
+void double_plot_pt_eta(
+    vector<float> ptMinVec,     // Vector of min pT cuts
+    vector<float> etaMaxVec,    // Vector of max eta cuts
+    string plotTitle,
+    string fileLabel,
+    string dirOut,
+    string plotRootName,        // Base name of plots for ROOT file
+    TFile* rootIn,              // ROOT input file
+    TFile* rootOut,             // ROOT output file
+    TH2F* hVar,                 // y-axis variable
+    TH2F* hTrk,                 // x-axis variable (usually hSim or hRec)
+    float plotMaxY = 1.0,       // maximum of plot y-axis (between 0. and 1.)
+    bool exclusiveBins = true,  // use exclusive binning (no overlap)
+    float ptPlotMin  = 0.1,     // min pT for x-axis
+    float ptPlotMax  = 10.0,    // max pT for x-axis
+    float etaPlotMax = 3.0,     // max +/- eta for x-axis
+    float legX = 0.15,          // left edge of plot legend
+    float legY = 0.40           // vertical midpoint of plot legend
+) {
+    // Function variables
+    vector<int> markColors = {845,865,855,895,805,795};
+    vector<int> markStyles = { 24, 25, 27, 28, 26, 32};
+    vector<float> markSize = {1.0,0.9,1.5,0.9,1.1,1.1};
+    vector<int> lineStyles = {  1,  1,  1,  1,  1,  1};
+    
+    // BUILD CANVAS AND MAIN ELEMENTS ----------
+    
+    // Build Canvas
+    TCanvas* canvas = makeMultiCanvas( fileLabel.c_str(), plotTitle.c_str(), 3, 1 );
+    
+    // Build Legends
+    TLegend* legPt1 = new TLegend(
+            legX,
+            legY + 0.5 * (0.05 * etaMaxVec.size()),
+            legX + 0.35,
+            legY - + 0.5 * (0.05 * etaMaxVec.size())
+        );
+        legPt1->SetFillColor(0);
+        legPt1->SetFillStyle(0);
+        legPt1->SetBorderSize(0);
+        legPt1->SetTextSize(0.035);
+    TLegend* legPt2 = (TLegend*) legPt1->Clone();
+    TLegend* legEta = new TLegend(
+            legX,
+            legY + 0.5 * (0.05 * ptMinVec.size()),
+            legX + 0.35,
+            legY - + 0.5 * (0.05 * ptMinVec.size())
+        );
+        legEta->SetFillColor(0);
+        legEta->SetFillStyle(0);
+        legEta->SetBorderSize(0);
+        legEta->SetTextSize(0.035);
+    // Build Dummy Plots
+    TH1D* hPtDummy1 = new TH1D("hPtDummy", ";p_{T} [GeV/c]",80,ptPlotMin,ptPlotMax);
+        hPtDummy1->GetYaxis()->CenterTitle();
+        hPtDummy1->GetYaxis()->SetTitleOffset(1.8);
+        hPtDummy1->GetYaxis()->SetRangeUser(0.0, plotMaxY);
+        hPtDummy1->GetYaxis()->SetTitle(plotTitle.c_str());
+        hPtDummy1->SetFillStyle(0);
+    TH1D* hPtDummy2 = (TH1D*) hPtDummy1->Clone();
+        hPtDummy2->GetYaxis()->CenterTitle();
+        hPtDummy2->GetYaxis()->SetTitleOffset(1.8);
+        hPtDummy2->GetYaxis()->SetRangeUser(0.0, plotMaxY);
+        hPtDummy2->GetYaxis()->SetTitle(plotTitle.c_str());
+        hPtDummy2->SetFillStyle(0);
+    TH1D* hEtaDummy = new TH1D("hEtaDummy",";#eta",60,-etaPlotMax,etaPlotMax);
+        hEtaDummy->GetYaxis()->CenterTitle();
+        hEtaDummy->GetYaxis()->SetTitleOffset(1.8);
+        hEtaDummy->GetYaxis()->SetRangeUser(0.0, plotMaxY);
+        hEtaDummy->GetYaxis()->SetTitle(plotTitle.c_str());
+        hEtaDummy->SetFillStyle(0);
+
+    
+    // PAD 1: PT PLOTS (iterates over eta cuts) ----------
+    
+    canvas->cd(1);
+    hPtDummy1->Draw();
+    for( int i = 0 ; i < etaMaxVec.size() ; i++ ) {
+        float etaCutLo = 0.0;
+        if( exclusiveBins && (i > 0) ) etaCutLo = etaMaxVec[i-1];
+        float etaCutHi = etaMaxVec[i];
+        
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(1) << etaCutLo;
+        string etaLoStr = stream.str(); stream.str("");
+        stream << std::fixed << std::setprecision(1) << etaCutHi;
+        string etaHiStr = stream.str(); stream.str("");
+        string plotName = plotRootName + "_vs_pT_etaCutM_" + etaLoStr + "-" + etaHiStr;
+        
+        float etaBinMLo = hTrk->GetXaxis()->FindBin(-etaCutHi + 0.001);
+        float etaBinMHi = hTrk->GetXaxis()->FindBin(-etaCutLo - 0.001);
+        
+        // pT for negative and positive eta bins
+        TH1D* hVarPt1 = (TH1D*) hVar->ProjectionY("hVarPt1",etaBinMLo,etaBinMHi,"e");
+        TH1D* hTrkPt1 = (TH1D*) hTrk->ProjectionY("hTrkPt1",etaBinMLo,etaBinMHi,"e");
+        
+        int j = i % ptMinVec.size(); // protects from # bins > # styles
+        TGraphAsymmErrors* gPt1 = new TGraphAsymmErrors();
+            gPt1->SetName((plotName + "_1").c_str());
+            gPt1->Divide(hVarPt1, hTrkPt1);
+            gPt1->SetMarkerColor(markColors[j]);
+            gPt1->SetMarkerStyle(markStyles[j]);
+            gPt1->SetMarkerSize(markSize[j]);
+            gPt1->SetLineColor(markColors[j]);
+            gPt1->SetLineStyle(lineStyles[j]);
+        
+        if( exclusiveBins ) legPt1->AddEntry(gPt1, ("-" + etaHiStr + " < #eta < -" + etaLoStr).c_str(), "lp");
+        else legPt1->AddEntry(gPt1, ("#eta < " + etaHiStr).c_str(), "lp");
+        
+        gPt1->Draw("pc");
+        
+        rootOut->cd();
+        gPt1->Write();
+        rootIn->cd();
+    }
+    legPt1->Draw();
+    gPad->SetTicks();
+//    canvas->GetPad(1)->SetLeftMargin(0.12);
+//    canvas->GetPad(1)->SetBottomMargin(0.13);
+//    canvas->GetPad(1)->SetLogx(1);
+    
+    canvas->cd(2);
+    hPtDummy2->Draw();
+    for( int i = 0 ; i < etaMaxVec.size() ; i++ ) {
+        float etaCutLo = 0.0;
+        if( exclusiveBins && (i > 0) ) etaCutLo = etaMaxVec[i-1];
+        float etaCutHi = etaMaxVec[i];
+        
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(1) << etaCutLo;
+        string etaLoStr = stream.str(); stream.str("");
+        stream << std::fixed << std::setprecision(1) << etaCutHi;
+        string etaHiStr = stream.str(); stream.str("");
+        string plotName = plotRootName + "_vs_pT_etaCutP_" + etaLoStr + "-" + etaHiStr;
+        
+        int etaBinPLo =  hTrk->GetXaxis()->FindBin(etaCutLo + 0.001);
+        int etaBinPHi =  hTrk->GetXaxis()->FindBin(etaCutHi - 0.001);
+        
+        // pT for negative and positive eta bins
+        TH1D* hVarPt2 = (TH1D*) hVar->ProjectionY("hVarPt2",etaBinPLo,etaBinPHi,"e");
+        TH1D* hTrkPt2 = (TH1D*) hTrk->ProjectionY("hTrkPt2",etaBinPLo,etaBinPHi,"e");
+        
+        int j = i % ptMinVec.size(); // protects from # bins > # styles
+        TGraphAsymmErrors* gPt2 = new TGraphAsymmErrors();
+            gPt2->SetName((plotName + "_2").c_str());
+            gPt2->Divide(hVarPt2, hTrkPt2);
+            gPt2->SetMarkerColor(markColors[j]);
+            gPt2->SetMarkerStyle(markStyles[j]);
+            gPt2->SetMarkerSize(markSize[j]);
+            gPt2->SetLineColor(markColors[j]);
+            gPt2->SetLineStyle(lineStyles[j]);
+        
+        if( exclusiveBins ) legPt2->AddEntry(gPt2, (etaLoStr + " < #eta < " + etaHiStr).c_str(), "lp");
+        else legPt2->AddEntry(gPt2, ("#eta > -" + etaHiStr).c_str(), "lp");
+        
+        gPt2->Draw("pc");
+        
+        rootOut->cd();
+        gPt2->Write();
+        rootIn->cd();
+    }
+    legPt2->Draw();
+    gPad->SetTicks();
+    
+    // PAD 2: ETA PLOTS (iterates over pT cuts) ----------
+    
+    canvas->cd(3);
+    hEtaDummy->Draw();
+    for( int i = 0 ; i < ptMinVec.size() ; i++ ) {
+        float ptCutLo = ptMinVec[i];
+        float ptCutHi = ptPlotMax;
+        if( exclusiveBins && (i+1 < ptMinVec.size()) ) ptCutHi = ptMinVec[i+1];
+        
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(1) << ptCutLo;
+        string ptLoStr = stream.str(); stream.str("");
+        stream << std::fixed << std::setprecision(1) << ptCutHi;
+        string ptHiStr = stream.str(); stream.str("");
+        string plotName = plotRootName + "_vs_eta_ptCut_" + ptLoStr + "-" + ptHiStr;
+
+        int ptBinLo = hTrk->GetYaxis()->FindBin(ptCutLo + 0.01);
+        int ptBinHi = hTrk->GetYaxis()->FindBin(ptCutHi - 0.01);
+        
+        TH1D* hVarEta = (TH1D*) hVar->ProjectionX("hVarEta",ptBinLo,ptBinHi,"e");
+        TH1D* hTrkEta = (TH1D*) hTrk->ProjectionX("hTrkEta",ptBinLo,ptBinHi,"e");
+        
+        int j = i % ptMinVec.size(); // protects from # bins > # styles
+        TGraphAsymmErrors* gEta = new TGraphAsymmErrors();
+            gEta->SetName(plotName.c_str());
+            gEta->Divide(hVarEta, hTrkEta);
+            gEta->SetMarkerColor(markColors[j]);
+            gEta->SetMarkerStyle(markStyles[j]);
+            gEta->SetMarkerSize(markSize[j]);
+            gEta->SetLineColor(markColors[j]);
+            gEta->SetLineStyle(lineStyles[j]);
+        
+        if( exclusiveBins ) legEta->AddEntry(gEta, (ptLoStr + " < p_{T} < " + ptHiStr + " GeV/c").c_str(), "lp");
+        else legEta->AddEntry(gEta, ("p_{T} > " + ptLoStr + " GeV/c").c_str(), "lp");
+        
+        gEta->Draw("pc");
+        
+        rootOut->cd();
+        gEta->Write();
+        rootIn->cd();
+    }
+    legEta->Draw();
+    gPad->SetTicks();
+    
+    rootOut->cd();
+    canvas->Write();
+    rootIn->cd();
+    
+    saveCanvas(canvas, dirOut, fileLabel.c_str());
+}
+
+
+
 void make_plots_2D(
     string fileIn,
     string dirOut,
     string fileOut,
-    string ptMin1Str,
-    string etaMax1Str,
-    string ptMin2Str = "0",
-    string etaMax2Str = "0"
+    vector<float> ptMinVec,
+    vector<float> etaMaxVec,
+    bool  exclusiveBins = true,
+    float ptPlotMin = 0.1,  // min domain for pt plots
+    float ptPlotMax = 10.0, // max pT value for plots
+    float etaPlotMax = 3.0  // max eta for plots
 ) {
     
     // Convert string arguments
     std::filesystem::create_directories(dirOut.c_str());
-    float ptMin1  = stof(ptMin1Str);
-    float etaMax1 = stof(etaMax1Str);
-    float ptMin2  = stof(ptMin2Str);
-    float etaMax2 = stof(etaMax2Str);
-    // Add second plot iff second pt and eta are provided
-    bool  usePlot2 = false;
-    if( (ptMin2 != 0) && (etaMax2 != 0) ) usePlot2 = true;
     
     // Internal parameters
-    char ndir[256] = "HITrackCorrections";
-    float logMin = 0.1; // minimum value for log plots
+    char  ndir[256] = "HITrackCorrections";
     float linMin = 0.0; // minimum value for linear plots
-    float ptMax  = 50.; // max pT value for plots
     float legX   = 0.15; // left edge of plot legend
     float legY   = 0.50; // vertical midpoint of plot legend
-    float effMax = 1.0; // absolute efficiency y-max
-    float secMax = 0.5; // secondary y-max
-    float mulMax = 0.1; // multiplicity y-max
-    float fakMax = 0.5; // fake track y-max
-    float etaMax  = etaMax1; // set max eta for plots
-    if( etaMax2 > etaMax1 ) etaMax = etaMax2;
+    float effMaxY = 1.00; // absolute efficiency y-max
+    float effLegY = 0.30; // vertical midpoint of plot legend
+    float secMaxY = 0.20; // secondary y-max
+    float secLegY = 0.75; // vertical midpoint of plot legend
+    float mulMaxY = 0.05; // multiplicity y-max
+    float mulLegY = 0.75; // vertical midpoint of plot legend
+    float fakMaxY = 0.20; // fake track y-max
+    float fakLegY = 0.75; // vertical midpoint of plot legend
 
     RiceStyle();
     gStyle->SetOptStat(0);
     
     // Read in file and histograms
-    TFile* f = new TFile(fileIn.c_str(), "READ");
-
-    // sim-to-reco hists
-    TH2F *hSim = (TH2F*) f->Get(Form("%s/hsim",ndir)); hSim->GetYaxis()->SetRangeUser(logMin,ptMax);
-    TH2F *hEff = (TH2F*) f->Get(Form("%s/heff",ndir)); hEff->GetYaxis()->SetRangeUser(logMin,ptMax);
-    TH2F *hMul = (TH2F*) f->Get(Form("%s/hmul",ndir)); hMul->GetYaxis()->SetRangeUser(logMin,ptMax);
-
-    // reco-to-sim hists
-    TH2F *hRec = (TH2F*) f->Get(Form("%s/hrec",ndir)); hRec->GetYaxis()->SetRangeUser(logMin,ptMax);
-    TH2F *hFak = (TH2F*) f->Get(Form("%s/hfak",ndir)); hFak->GetYaxis()->SetRangeUser(logMin,ptMax);
-    TH2F *hSec = (TH2F*) f->Get(Form("%s/hsec",ndir)); hSec->GetYaxis()->SetRangeUser(logMin,ptMax);
-
-    // ratio histograms
-    TH2F *rEff = (TH2F*) hEff->Clone("rEff");
-    TH2F *rMul = (TH2F*) hMul->Clone("rMul");
-    TH2F *rFak = (TH2F*) hFak->Clone("rFak");
-    TH2F *rSec = (TH2F*) hSec->Clone("rSec");
+    TFile* fin = new TFile(fileIn.c_str(), "READ");
+    TFile* fout = new TFile((dirOut + fileOut).c_str(),"RECREATE");
+    
+    // Sim-to-Reco: Simulated tracks, Efficiency fraction,Multiple reconstruction fraction
+    TH2F* hSim = (TH2F*) fin->Get(Form("%s/hsim",ndir)); hSim->GetYaxis()->SetRangeUser(ptPlotMin,ptPlotMax);
+    TH2F* hEff = (TH2F*) fin->Get(Form("%s/heff",ndir)); hEff->GetYaxis()->SetRangeUser(ptPlotMin,ptPlotMax);
+    TH2F* hMul = (TH2F*) fin->Get(Form("%s/hmul",ndir)); hMul->GetYaxis()->SetRangeUser(ptPlotMin,ptPlotMax);
+    // Reco-to-Sim: Reco tracks, Fake fraction, Secondary fraction
+    TH2F* hRec = (TH2F*) fin->Get(Form("%s/hrec",ndir)); hRec->GetYaxis()->SetRangeUser(ptPlotMin,ptPlotMax);
+    TH2F* hFak = (TH2F*) fin->Get(Form("%s/hfak",ndir)); hFak->GetYaxis()->SetRangeUser(ptPlotMin,ptPlotMax);
+    TH2F* hSec = (TH2F*) fin->Get(Form("%s/hsec",ndir)); hSec->GetYaxis()->SetRangeUser(ptPlotMin,ptPlotMax);
+    
+    // Ratio histograms
+    TH2F* rEff = (TH2F*) hEff->Clone("rEff");
+    TH2F* rMul = (TH2F*) hMul->Clone("rMul");
+    TH2F* rFak = (TH2F*) hFak->Clone("rFak");
+    TH2F* rSec = (TH2F*) hSec->Clone("rSec");
 
     // RECONSTRUCTION FRACTION PLOTS --------------------
-
-    // reco efficiency fraction
-    TCanvas *c2 = new TCanvas("c2","Reco Efficiency Fraction",1000,500);
-    //c2->SetLogy();
+    
+    // Reco efficiency fraction
+    TCanvas *c2 = new TCanvas("c2","Reco Efficiency Fraction",500,500);
+    c2->SetLogy(1);
     gPad->SetRightMargin(0.15);
     rEff->Divide(hEff,hSim,1,1,"B");
     rEff->SetStats(0);
-    rEff->SetMaximum(effMax); rEff->SetMinimum(linMin);
+    rEff->SetMaximum(effMaxY); rEff->SetMinimum(linMin);
     rEff->SetTitle("Absolute Efficiency");
     rEff->Draw("colz");
+    rEff->Write();
+    saveCanvas(c2, dirOut, "Ratio_Efficiency");
 
-    // multiple reco fraction
-    TCanvas *c3 = new TCanvas("c3","Multiple Reco Fraction",1000,500);
-    //c3->SetLogy();
+    // Multiple reco fraction
+    TCanvas *c3 = new TCanvas("c3","Multiple Reco Fraction",500,500);
+    c3->SetLogy(1);
     gPad->SetRightMargin(0.15);
     rMul->Divide(hMul,hSim,1,1,"B");
     rMul->SetStats(0);
-    rMul->SetMaximum(mulMax); rMul->SetMinimum(linMin);
+    rMul->SetMaximum(mulMaxY); rMul->SetMinimum(linMin);
     rMul->SetTitle("Multiple Reconstruction Fraction");
     rMul->Draw("colz");
+    rMul->Write();
+    saveCanvas(c3, dirOut, "Ratio_MultiReco");
 
-    // fake reco fraction
-    TCanvas *c4 = new TCanvas("c4","Fake Reco Fraction",1000,500);
-    //c4->SetLogy();
+    // Fake reco fraction
+    TCanvas *c4 = new TCanvas("c4","Fake Reco Fraction",500,500);
+    c4->SetLogy(1);
     gPad->SetRightMargin(0.15);
     rFak->Divide(hFak,hRec,1,1,"B");
     rFak->SetStats(0);
-    rFak->SetMaximum(fakMax); rFak->SetMinimum(linMin);
+    rFak->SetMaximum(fakMaxY); rFak->SetMinimum(linMin);
     rFak->SetTitle("Fake Reconstruction Fraction");
     rFak->Draw("colz");
+    rFak->Write();
+    saveCanvas(c4, dirOut, "Ratio_FakeReco");
 
-    // secondary reco fraction
-    TCanvas *c5 = new TCanvas("c5","Secondary Fraction",1000,500);
-    //c5->SetLogy();
+    // Secondary reco fraction
+    TCanvas *c5 = new TCanvas("c5","Secondary Fraction",500,500);
+    c5->SetLogy(1);
     gPad->SetRightMargin(0.15);
     rSec->Divide(hSec,hRec,1,1,"B");
     rSec->SetStats(0);
-    rSec->SetMaximum(secMax); rSec->SetMinimum(linMin);
+    rSec->SetMaximum(secMaxY); rSec->SetMinimum(linMin);
     rSec->SetTitle("Non-Primary Reconstruction Fraction");
     rSec->Draw("colz");
-
-    // find bins corresponding to projections for below
-    Int_t ptBinMax1 = hSim->GetYaxis()->FindBin(ptMin1 + 0.01);
-    Int_t ptBinMax2 = hSim->GetYaxis()->FindBin(ptMin2 + 0.01);
-    Int_t ptBins    = hSim->GetYaxis()->GetNbins();
-    Int_t etaBin1M  = hSim->GetXaxis()->FindBin(-etaMax1 + 0.01);
-    Int_t etaBin1P  = hSim->GetXaxis()->FindBin(etaMax1 - 0.01);
-    Int_t etaBin2M  = hSim->GetXaxis()->FindBin(-etaMax2 + 0.01);
-    Int_t etaBin2P  = hSim->GetXaxis()->FindBin(etaMax2 - 0.01);
+    rSec->Write();
+    saveCanvas(c5, dirOut, "Ratio_SecondReco");
     
     // Plots vs. pT with multiple eta cuts
     
-    // projected hists: pt < ptMin1
-    TH1D* hSimEta1 = (TH1D*) hSim->ProjectionX("hSimEta1",ptBinMax1,ptBins,"e");
-    TH1D* hEffEta1 = (TH1D*) hEff->ProjectionX("hEffEta1",ptBinMax1,ptBins,"e");
-    TH1D* hMulEta1 = (TH1D*) hMul->ProjectionX("hMulEta1",ptBinMax1,ptBins,"e");
-    TH1D* hRecEta1 = (TH1D*) hRec->ProjectionX("hRecEta1",ptBinMax1,ptBins,"e");
-    TH1D* hFakEta1 = (TH1D*) hFak->ProjectionX("hFakEta1",ptBinMax1,ptBins,"e");
-    TH1D* hSecEta1 = (TH1D*) hSec->ProjectionX("hSecEta1",ptBinMax1,ptBins,"e");
-    // projected hists: pt < ptMin2
-    TH1D* hSimEta2; TH1D* hEffEta2; TH1D* hMulEta2;
-    TH1D* hRecEta2; TH1D* hFakEta2; TH1D* hSecEta2;
-    if( usePlot2 ){
-        hSimEta2 = (TH1D*) hSim->ProjectionX("hSimEta2",ptBinMax2,ptBins,"e");
-        hEffEta2 = (TH1D*) hEff->ProjectionX("hEffEta2",ptBinMax2,ptBins,"e");
-        hMulEta2 = (TH1D*) hMul->ProjectionX("hMulEta2",ptBinMax2,ptBins,"e");
-        hRecEta2 = (TH1D*) hRec->ProjectionX("hRecEta2",ptBinMax2,ptBins,"e");
-        hFakEta2 = (TH1D*) hFak->ProjectionX("hFakEta2",ptBinMax2,ptBins,"e");
-        hSecEta2 = (TH1D*) hSec->ProjectionX("hSecEta2",ptBinMax2,ptBins,"e");
-    }
+    // Efficiency
+    double_plot_pt_eta(
+        ptMinVec, // vector<float> ptMinVec
+        etaMaxVec, // vector<float> etaMaxVec
+        "Absolute Efficiency", // string plotTitle
+        "Double_AbsoluteEfficiency", // string fileLable
+        dirOut, // string dirOut
+        "gEfficiency", // string plotRootName
+        fin,  // TFile* rootIn
+        fout, // TFile* rootOut
+        hEff, // TH2F* hVar
+        hSim, // TH2F* hTrk
+        effMaxY, // float plotMaxY
+        exclusiveBins, // bool exclusiveBins
+        ptPlotMin, // float ptPlotMin
+        ptPlotMax, // float ptPlotMax
+        etaPlotMax, // float etaPlotMax
+        legX, // float legX
+        effLegY // float legY
+    );
     
-    TH1D* hDumEta = new TH1D("hDumEta",";#eta",60,-etaMax,etaMax);
-        hDumEta->SetMaximum(1.0);
-        hDumEta->GetXaxis()->CenterTitle();
-        hDumEta->GetYaxis()->SetTitleOffset(1.8);
-    TH1D* hDumEta2 = (TH1D*) hDumEta->Clone("hDumEta2");
-        hDumEta2->SetMaximum(1.0);
-    TH1D* hDumEta3 = (TH1D*) hDumEta->Clone("hDumEta3");
-        hDumEta3->SetMaximum(1.0);
+    // Multiple Tracks
+    double_plot_pt_eta(
+        ptMinVec, // vector<float> ptMinVec
+        etaMaxVec, // vector<float> etaMaxVec
+        "Multiple Reconstruction Fraction", // string plotTitle
+        "Double_MultipleRecoFraction", // string fileLable
+        dirOut, // string dirOut
+        "gMultiReco", // string plotRootName
+        fin,  // TFile* rootIn
+        fout, // TFile* rootFile
+        hMul, // TH2F* hVar
+        hSim, // TH2F* hTrk
+        mulMaxY, // float plotMaxY
+        exclusiveBins, // bool exclusiveBins
+        ptPlotMin, // float ptPlotMin
+        ptPlotMax, // float ptPlotMax
+        etaPlotMax, // float etaPlotMax
+        legX, // float legX
+        mulLegY // float legY
+    );
     
-    // Plots vs. eta with multiple pT cuts
+    // Fake Tracks
+    double_plot_pt_eta(
+        ptMinVec, // vector<float> ptMinVec
+        etaMaxVec, // vector<float> etaMaxVec
+        "Fake Reconstruction Fraction", // string plotTitle
+        "Double_FakeRecoFraction", // string fileLable
+        dirOut, // string dirOut
+        "gFakeReco", // string plotRootName
+        fin,  // TFile* rootIn
+        fout, // TFile* rootFile
+        hFak, // TH2F* hVar
+        hRec, // TH2F* hTrk
+        fakMaxY, // float plotMaxY
+        exclusiveBins, // bool exclusiveBins
+        ptPlotMin, // float ptPlotMin
+        ptPlotMax, // float ptPlotMax
+        etaPlotMax, // float etaPlotMax
+        legX, // float legX
+        fakLegY // float legY
+    );
     
-    // projected hists: abs(eta) < etaMax1
-    TH1D* hSimPt1 = (TH1D*) hSim->ProjectionY("hSimPt1",etaBin1M,etaBin1P,"e");
-    TH1D* hEffPt1 = (TH1D*) hEff->ProjectionY("hEffPt1",etaBin1M,etaBin1P,"e");
-    TH1D* hMulPt1 = (TH1D*) hMul->ProjectionY("hMulPt1",etaBin1M,etaBin1P,"e");
-    TH1D* hRecPt1 = (TH1D*) hRec->ProjectionY("hRecPt1",etaBin1M,etaBin1P,"e");
-    TH1D* hFakPt1 = (TH1D*) hFak->ProjectionY("hFakPt1",etaBin1M,etaBin1P,"e");
-    TH1D* hSecPt1 = (TH1D*) hSec->ProjectionY("hSecPt1",etaBin1M,etaBin1P,"e");
-    // projected hists: abs(eta) < etaMax2
-    TH1D* hSimPt2; TH1D* hEffPt2; TH1D* hMulPt2;
-    TH1D* hRecPt2; TH1D* hFakPt2; TH1D* hSecPt2;
-    if( usePlot2 ){
-        hSimPt2 = (TH1D*) hSim->ProjectionY("hSimPt2",etaBin2M,etaBin2P,"e");
-        hEffPt2 = (TH1D*) hEff->ProjectionY("hEffPt2",etaBin2M,etaBin2P,"e");
-        hMulPt2 = (TH1D*) hMul->ProjectionY("hMulPt2",etaBin2M,etaBin2P,"e");
-        hRecPt2 = (TH1D*) hRec->ProjectionY("hRecPt2",etaBin2M,etaBin2P,"e");
-        hFakPt2 = (TH1D*) hFak->ProjectionY("hFakPt2",etaBin2M,etaBin2P,"e");
-        hSecPt2 = (TH1D*) hSec->ProjectionY("hSecPt2",etaBin2M,etaBin2P,"e");
-    }
-
-    TH1D* hDumPt = new TH1D("hDumPt",";p_{T} [GeV/c]",80,logMin,ptMax);
-        hDumPt->SetMaximum(1.0);
-        hDumPt->GetXaxis()->CenterTitle();
-        hDumPt->GetYaxis()->SetTitleOffset(1.8);
-    TH1D* hDumPt2 = (TH1D*) hDumPt->Clone("hDumPt2");
-        hDumPt2->SetMaximum(1.0);
-    TH1D* hDumPt3 = (TH1D*) hDumPt->Clone("hDumPt3");
-        hDumPt3->SetMaximum(1.0);
+    // Secondary Tracks
+    double_plot_pt_eta(
+        ptMinVec, // vector<float> ptMinVec
+        etaMaxVec, // vector<float> etaMaxVec
+        "Non-Primary Reconstruction Fraction", // string plotTitle
+        "Double_SecondaryRecoFraction", // string fileLable
+        dirOut, // string dirOut
+        "gSecondReco", // string plotRootName
+        fin,  // TFile* rootIn
+        fout, // TFile* rootFile
+        hSec, // TH2F* hVar
+        hRec, // TH2F* hTrk
+        secMaxY, // float plotMaxY
+        exclusiveBins, // bool exclusiveBins
+        ptPlotMin, // float ptPlotMin
+        ptPlotMax, // float ptPlotMax
+        etaPlotMax, // float etaPlotMax
+        legX, // float legX
+        secLegY // float legY
+    );
+        
+    // SIM & RECO HISTOGRAMS --------------------
     
-    // ABSOLUTE EFFICIENCY FRACTION --------------------
+    fout->cd();
     
-    // Build TGraphs
-    TGraphAsymmErrors* gEffEta1 = new TGraphAsymmErrors();
-        gEffEta1->SetName("gEffEta1");
-        gEffEta1->Divide(hEffEta1,hSimEta1); // WHAT IS THIS DOING?
-        gEffEta1->SetMarkerColor(4);
-        gEffEta1->SetMarkerStyle(24);
-        gEffEta1->SetLineColor(4);
-    TGraphAsymmErrors* gEffPt1 = new TGraphAsymmErrors();
-        gEffPt1->SetName("gEffPt1");
-        gEffPt1->Divide(hEffPt1,hSimPt1); // WHAT IS THIS DOING?
-        gEffPt1->SetMarkerColor(4);
-        gEffPt1->SetMarkerStyle(24);
-        gEffPt1->SetLineColor(4);
-    TGraphAsymmErrors* gEffEta2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gEffEta2->SetName("gEffEta2");
-        gEffEta2->Divide(hEffEta2,hSimEta2); // WHAT IS THIS DOING?
-        gEffEta2->SetMarkerColor(2);
-        gEffEta2->SetMarkerStyle(25);
-        gEffEta2->SetLineColor(2);
-        gEffEta2->SetLineStyle(2);
-    }
-    TGraphAsymmErrors* gEffPt2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gEffPt2->SetName("gEffPt2");
-        gEffPt2->Divide(hEffPt2,hSimPt2); // WHAT IS THIS DOING?
-        gEffPt2->SetLineColor(2);
-        gEffPt2->SetLineStyle(2);
-        gEffPt2->SetMarkerColor(2);
-        gEffPt2->SetMarkerStyle(25);
-    }
+    // Simulated Tracks
+    TCanvas *c0 = new TCanvas("c0","Simulated Tracks",500,500);
+    c0->SetLogy(1);
+    gPad->SetRightMargin(0.15);
+    hSim->SetStats(0);
+    hSim->SetMinimum(linMin);
+    hSim->SetTitle("Simulated Tracks");
+    hSim->Draw("colz");
+    hSim->Write();
+    saveCanvas(c0, dirOut, "2DHist_SimulatedTracks");
     
-    // Eta Legend
-    TLegend* legEta = new TLegend(legX, legY+0.10, legX+0.35, legY-0.10);
-        legEta->SetFillColor(0);
-        legEta->SetFillStyle(0);
-        legEta->SetBorderSize(0);
-        legEta->SetTextSize(0.04);
-        legEta->AddEntry(gEffEta1,("p_{T} > " + ptMin1Str + " GeV/c").c_str(),"lp"); // IS THIS BACKWARDS???
-        if( usePlot2 ) legEta->AddEntry(gEffEta2,("p_{T} > " + ptMin2Str + " GeV/c").c_str(),"lp");
-    // pT Legend
-    TLegend* legPt = new TLegend(legX, legY+0.10, legX+0.35, legY-0.10);
-        legPt->SetFillColor(0);
-        legPt->SetFillStyle(0);
-        legPt->SetBorderSize(0);
-        legPt->SetTextSize(0.04);
-        legPt->AddEntry(gEffPt1,("|#eta| < " + etaMax1Str).c_str(),"lp"); // IS THIS BACKWARDS???
-        if( usePlot2 ) legPt->AddEntry(gEffPt2,("|#eta| < " + etaMax2Str).c_str(),"lp");
-    TCanvas* c7 = makeMultiCanvas("c7", "Efficiency Fraction", 2,1 );
-    // graph vs eta
-    TH1F* hDumEtaEff = (TH1F*) hDumEta->Clone("hDumEtaEff");
-    fixedFontHist1D(hDumEtaEff,1.05,1.2);
-    hDumEtaEff->GetYaxis()->SetTitle("Absolute efficiency");
-    // graph vs pt
-    TH1F* hDumPtEff = (TH1F*) hDumPt->Clone("hDumPtEff");
-    fixedFontHist1D(hDumPtEff,1.05,1.2);
-    hDumPtEff->GetYaxis()->SetTitle("Absolute efficiency");
-    // save canvas
-    c7->cd(1);
-        hDumEtaEff->Draw();
-        gEffEta1->Draw("pc");
-        if( usePlot2 ) gEffEta2->Draw("pc");
-        legEta->Draw();
-        gPad->SetTicks();
-        c7->GetPad(1)->SetLeftMargin(0.12);
-        c7->GetPad(1)->SetBottomMargin(0.13);
-        c7->GetPad(1)->SetLogx(0);
-    c7->cd(2);
-        hDumPtEff->Draw();
-        gEffPt1->Draw("pc");
-        if( usePlot2 ) gEffPt2->Draw("pc");
-        legPt->Draw();
-        gPad->SetTicks();
-        c7->GetPad(2)->SetLeftMargin(0.12);
-        c7->GetPad(2)->SetBottomMargin(0.13);
-        c7->GetPad(2)->SetLogx();
-    saveCanvas(c7, dirOut, "AbsoluteEfficiency");
+    // Reco Tracks
+    TCanvas *c1 = new TCanvas("c0","Reconstructed Tracks",500,500);
+    c1->SetLogy(1);
+    gPad->SetRightMargin(0.15);
+    hRec->SetStats(0);
+    hRec->SetMinimum(linMin);
+    hRec->SetTitle("Reconstructed Tracks");
+    hRec->Draw("colz");
+    hRec->Write();
+    saveCanvas(c1, dirOut, "2DHist_RecoTracks");
     
-    // MULTIPLE RECONSTRUCTION FRACTION --------------------
-    
-    // Build TGraphs
-    TGraphAsymmErrors* gMulEta1 = new TGraphAsymmErrors();
-        gMulEta1->SetName("gMulEta1");
-        gMulEta1->Divide(hMulEta1,hSimEta1);
-        gMulEta1->SetMarkerStyle(25);
-        gMulEta1->SetLineStyle(2);
-        gMulEta1->SetLineColor(2);
-        gMulEta1->SetMarkerColor(2);
-    TGraphAsymmErrors* gMulPt1 = new TGraphAsymmErrors();
-        gMulPt1->SetName("gMulPt1");
-        gMulPt1->Divide(hMulPt1,hSimPt1);
-        gMulPt1->SetMarkerStyle(24);
-        gMulPt1->SetLineColor(4);
-        gMulPt1->SetMarkerColor(4);
-    TGraphAsymmErrors* gMulEta2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gMulEta2->SetName("gMulEta2");
-        gMulEta2->Divide(hMulEta2,hSimEta2);
-        gMulEta2->SetMarkerStyle(24);
-        gMulEta2->SetLineColor(4);
-        gMulEta2->SetMarkerColor(4);
-    }
-    TGraphAsymmErrors* gMulPt2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gMulPt2->SetName("gMulPt2");
-        gMulPt2->Divide(hMulPt2,hSimPt2);
-        gMulPt2->SetMarkerStyle(25);
-        gMulPt2->SetLineStyle(2);
-        gMulPt2->SetLineColor(2);
-        gMulPt2->SetMarkerColor(2);
-    }
-    TCanvas *c8 = makeMultiCanvas("c8","Multiple Fraction", 2, 1);
-    // graph vs eta
-    TH1F* hDumEtaMul = (TH1F*) hDumEta3->Clone("hDumEtaMul");
-    fixedFontHist1D(hDumEtaMul, 1.05, 1.2);
-    hDumEtaMul->GetYaxis()->SetRangeUser(linMin, mulMax);
-    hDumEtaMul->GetYaxis()->SetTitle("Multiple Reconstruction Fraction");
-    // graph vs pt
-    TH1F* hDumPtMul = (TH1F*) hDumPt3->Clone("hDumPtMul");
-    fixedFontHist1D(hDumPtMul, 1.05, 1.2);
-    hDumPtMul->GetYaxis()->SetRangeUser(linMin, mulMax);
-    hDumPtMul->GetYaxis()->SetTitle("Multiple Reconstruction Fraction");
-    // new legends
-    TLegend* legEta2 = (TLegend*) legEta->Clone();
-    TLegend* legPt2 = (TLegend*) legPt->Clone();
-    // save canvas
-    c8->cd(1);
-        hDumEtaMul->Draw();
-        gMulEta1->Draw("pc");
-        if( usePlot2 ) gMulEta2->Draw("pc");
-        legEta2->Draw();
-        gPad->SetTicks();
-        c8->GetPad(1)->SetLeftMargin(0.12);
-        c8->GetPad(1)->SetBottomMargin(0.13);
-        gPad->SetLogx(0);
-    c8->cd(2);
-        hDumPtMul->Draw();
-        gMulPt1->Draw("pc");
-        if( usePlot2 ) gMulPt2->Draw("pc");
-        legPt2->Draw();
-        gPad->SetTicks();
-        c8->GetPad(2)->SetLeftMargin(0.12);
-        c8->GetPad(2)->SetBottomMargin(0.13);
-        gPad->SetLogx(1);
-    saveCanvas(c8, dirOut, "MultipleReconstruction");
-    
-    // FAKE RECONSTRUCTION FRACTION --------------------
-    
-    // Build TGraphs
-    TGraphAsymmErrors* gFakEta1 = new TGraphAsymmErrors();
-        gFakEta1->SetName("gFakEta1");
-        gFakEta1->Divide(hFakEta1,hRecEta1);
-        gFakEta1->SetMarkerStyle(24);
-        gFakEta1->SetLineColor(4);
-        gFakEta1->SetMarkerColor(4);
-    TGraphAsymmErrors* gFakPt1 = new TGraphAsymmErrors();
-        gFakPt1->SetName("gFakPt1");
-        gFakPt1->Divide(hFakPt1,hRecPt1);
-        gFakPt1->SetMarkerStyle(24);
-        gFakPt1->SetLineColor(4);
-        gFakPt1->SetMarkerColor(4);
-    TGraphAsymmErrors* gFakEta2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gFakEta2->SetName("gFakEta2");
-        gFakEta2->Divide(hFakEta2,hRecEta2);
-        gFakEta2->SetMarkerStyle(25);
-        gFakEta2->SetLineStyle(2);
-        gFakEta2->SetLineColor(2);
-        gFakEta2->SetMarkerColor(2);
-    }
-    TGraphAsymmErrors* gFakPt2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gFakPt2->SetName("gFakPt2");
-        gFakPt2->Divide(hFakPt2,hRecPt2);
-        gFakPt2->SetMarkerStyle(25);
-        gFakPt2->SetLineStyle(2);
-        gFakPt2->SetLineColor(2);
-        gFakPt2->SetMarkerColor(2);
-    }
-    TCanvas* c9 = makeMultiCanvas("c9", "Fake Fraction", 2, 1);
-    // graph vs eta
-    TH1F* hDumEtaFak = (TH1F*) hDumEta2->Clone("hDumEtaMul");
-    fixedFontHist1D(hDumEtaFak, 1.05, 1.2);
-    hDumEtaFak->GetYaxis()->SetRangeUser(linMin, fakMax);
-    hDumEtaFak->GetYaxis()->SetTitle("Fake Reconstruction Fraction");
-    // graph vs pt
-    TH1F* hDumPtFak = (TH1F*) hDumPt2->Clone("hDumPtMul");
-    fixedFontHist1D(hDumPtFak, 1.05, 1.2);
-    hDumPtFak->GetYaxis()->SetRangeUser(linMin, fakMax);
-    hDumPtFak->GetYaxis()->SetTitle("Fake Reconstruction Fraction");
-    // save canvas
-    c9->cd(1); hDumEtaFak->Draw();
-        gFakEta1->Draw("pc");
-        if( usePlot2 ) gFakEta2->Draw("pc");
-        legEta2->Draw();
-        gPad->SetTicks();
-        gPad->SetLeftMargin(0.12);
-        gPad->SetBottomMargin(0.13);
-    c9->cd(2); hDumPtFak->Draw();
-        gFakPt1->Draw("pc");
-        if( usePlot2 ) gFakPt2->Draw("pc");
-        legPt2->Draw();
-        gPad->SetTicks();
-        gPad->SetLeftMargin(0.12);
-        gPad->SetBottomMargin(0.13);
-        gPad->SetLogx(1);
-    saveCanvas(c9, dirOut, "FakeRate");
-    
-    // NON-PRIMARY (SECONDARY)  RECONSTRUCTION FRACTION --------------------
-    
-    // Build TGraphs
-    TGraphAsymmErrors* gSecEta1 = new TGraphAsymmErrors();
-        gSecEta1->SetName("gSecEta1");
-        gSecEta1->Divide(hSecEta1,hRecEta1);
-        gSecEta1->SetMarkerStyle(24);
-        gSecEta1->SetLineColor(4);
-        gSecEta1->SetMarkerColor(4);
-    TGraphAsymmErrors* gSecPt1 = new TGraphAsymmErrors();
-        gSecPt1->SetName("gSecPt1");
-        gSecPt1->Divide(hSecPt1,hRecPt1);
-        gSecPt1->SetMarkerStyle(24);
-        gSecPt1->SetLineColor(4);
-        gSecPt1->SetMarkerColor(4);
-    TGraphAsymmErrors* gSecEta2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gSecEta2->SetName("gSecEta2");
-        gSecEta2->Divide(hSecEta2,hRecEta2);
-        gSecEta2->SetMarkerStyle(25);
-        gSecEta2->SetLineStyle(2);
-        gSecEta2->SetLineColor(2);
-        gSecEta2->SetMarkerColor(2);
-    }
-    TGraphAsymmErrors* gSecPt2 = new TGraphAsymmErrors();
-    if( usePlot2 ){
-        gSecPt2->SetName("gSecPt2");
-        gSecPt2->Divide(hSecPt2,hRecPt2);
-        gSecPt2->SetMarkerStyle(25);
-        gSecPt2->SetLineStyle(2);
-        gSecPt2->SetLineColor(2);
-        gSecPt2->SetMarkerColor(2);
-    }
-    TCanvas* c10 = makeMultiCanvas("c10", "Secondary Fraction", 2, 1);
-    // graph vs eta
-    TH1F* hDumEtaSec = (TH1F*) hDumEta2->Clone("hDumEtaMul");
-    fixedFontHist1D(hDumEtaSec, 1.05, 1.3);
-    hDumEtaSec->GetYaxis()->SetRangeUser(linMin, secMax);
-    hDumEtaSec->GetYaxis()->SetTitle("Non-Primary Reconstruction Fraction");
-    // graph vs pt
-    TH1F* hDumPtSec = (TH1F*) hDumPt2->Clone("hDumPtMul");
-    fixedFontHist1D(hDumPtSec, 1.05, 1.3);
-    hDumPtSec->GetYaxis()->SetRangeUser(linMin ,secMax);
-    hDumPtSec->GetYaxis()->SetTitle("Non-Primary Reconstruction Fraction");
-    // save canvas
-    c10->cd(1);
-        hDumEtaSec->Draw();
-        gSecEta1->Draw("pc");
-        if( usePlot2 ) gSecEta2->Draw("pc");
-        legEta2->Draw();
-        gPad->SetTicks();
-        gPad->SetLeftMargin(0.15);
-        gPad->SetBottomMargin(0.13);
-    c10->cd(2);
-        hDumPtSec->Draw();
-        gSecPt1->Draw("pc");
-        if( usePlot2 ) gSecPt2->Draw("pc");
-        legPt2->Draw();
-        gPad->SetTicks();
-        gPad->SetLeftMargin(0.15);
-        gPad->SetBottomMargin(0.13);
-        gPad->SetLogx(1);
-    saveCanvas(c10, dirOut, "SecondaryReconstruction");
-
-    // EXPORT ROOT FILE --------------------
-    
-    TFile *fout = new TFile((dirOut + fileOut).c_str(),"RECREATE");
-        gEffPt1->Write();
-        gEffEta1->Write();
-        gMulPt1->Write();
-        gMulEta1->Write();
-        gFakPt1->Write();
-        gFakEta1->Write();
-        gSecPt1->Write();
-        gSecEta1->Write();
-    if( usePlot2 ){
-        gEffPt2->Write();
-        gEffEta2->Write();
-        gMulPt2->Write();
-        gMulEta2->Write();
-        gFakPt2->Write();
-        gFakEta2->Write();
-        gSecPt2->Write();
-        gSecEta2->Write();
-    }
     fout->Close();
 }
 
@@ -486,6 +454,11 @@ void set_plot_style() {
 
 
 void plotHists() {
+    // Vector of min pT cuts
+    vector<float> ptMinVec  = {0.1, 0.3, 0.5, 1.0, 3.0};
+    // Vector of max |eta| cuts
+    vector<float> etaMaxVec = {1.0, 2.4, 3.0};
+    
     vector<vector<string>> fileNames = {
         {
             "/Users/jordanlang/Documents/Research/MIT Research/UPC Analysis/Tracking/Data/TrackAnalyzer_single_diff_STARLIGHT_UPC_2024_01_19.root",
@@ -504,10 +477,8 @@ void plotHists() {
             fileNames[i][0],
             fileNames[i][1],
             fileNames[i][2],
-            "0.5",  // ptMin1
-            "2.4",  // etaMax1
-            "2.0",  // ptMin2
-            "3.0"   // etaMax2
+            ptMinVec,
+            etaMaxVec
         );
-    };
+    }
 }

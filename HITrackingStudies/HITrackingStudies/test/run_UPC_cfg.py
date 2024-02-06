@@ -106,13 +106,12 @@ process.HITrackCorrections.jetSrc           = cms.InputTag("ak4CaloJets")
 process.HITrackCorrections.associatorMap    = cms.InputTag("trackingParticleRecoTrackAsssociation")
 
 # Cut options
-# ??? Why are there no cuts ???
 process.HITrackCorrections.useCentrality    = False
 process.HITrackCorrections.applyTrackCuts   = False
 process.HITrackCorrections.fillNTuples      = False
 process.HITrackCorrections.applyVertexZCut  = False
 process.HITrackCorrections.doVtxReweighting = False
-process.HITrackCorrections.doCaloMatched    = False
+process.HITrackCorrections.doCaloMatched    = False # NO CAL MATCHING?!
 
 # Cut values
 process.HITrackCorrections.dxyErrMax    = 3.0
@@ -178,3 +177,5 @@ process.p = cms.Path(
         process.HITrackCorrections *
         process.anaTrack
 )
+# process.HiForestInfo
+# process.trackSequencePbPb or ...pp
